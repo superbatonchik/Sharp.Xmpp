@@ -26,7 +26,7 @@ namespace Sharp.Xmpp.Client
 
         /// <summary>
         /// The instance of the XmppIm class used for implementing the basic messaging
-        /// and presence funcionality.
+        /// and presence functionality.
         /// </summary>
         private XmppIm im;
 
@@ -36,7 +36,7 @@ namespace Sharp.Xmpp.Client
         private SoftwareVersion version;
 
         /// <summary>
-        /// Provides access to the 'Service Discovery' XMPP extension funtionality.
+        /// Provides access to the 'Service Discovery' XMPP extension functionality.
         /// </summary>
         private ServiceDiscovery sdisco;
 
@@ -61,12 +61,12 @@ namespace Sharp.Xmpp.Client
         private Attention attention;
 
         /// <summary>
-        /// Provides access to the 'Entity Time' XMPP extension funcionality.
+        /// Provides access to the 'Entity Time' XMPP extension functionality.
         /// </summary>
         private EntityTime time;
 
         /// <summary>
-        /// Provides access to the 'Blocking Command' XMPP extension funcionality.
+        /// Provides access to the 'Blocking Command' XMPP extension functionality.
         /// </summary>
         private BlockingCommand block;
 
@@ -79,6 +79,11 @@ namespace Sharp.Xmpp.Client
         /// Provides access to the 'User Tune' XMPP extension functionality.
         /// </summary>
         private UserTune userTune;
+
+        /// <summary>
+        /// Provides access to the "Multi-User Chat" XMPP extension functionality.
+        /// </summary>
+        private MultiUserChat groupChat;
 
 #if WINDOWSPLATFORM
 		/// <summary>
@@ -363,6 +368,23 @@ namespace Sharp.Xmpp.Client
         }
 
         /// <summary>
+        /// A callback method to invoke when a request for voice is received
+        /// from another XMPP user.
+        /// </summary>
+        public RegistrationCallback VoiceRequestedInGroupChat
+        {
+            get
+            {
+                return groupChat.VoiceRequested;
+            }
+
+            set
+            {
+                groupChat.VoiceRequested = value;
+            }
+        }
+
+        /// <summary>
         /// The event that is raised when a status notification has been received.
         /// </summary>
         public event EventHandler<StatusEventArgs> StatusChanged
@@ -448,6 +470,81 @@ namespace Sharp.Xmpp.Client
             remove
             {
                 im.Message -= value;
+            }
+        }
+
+        /// <summary>
+        /// The event that is raised when the subject is changed in a group chat.
+        /// </summary>
+        public event EventHandler<MessageEventArgs> GroupChatSubjectChanged
+        {
+            add
+            {
+                groupChat.SubjectChanged += value;
+            }
+            remove
+            {
+                groupChat.SubjectChanged -= value;
+            }
+        }
+
+        /// <summary>
+        /// The event that is raised when a participant's presence is changed in a group chat.
+        /// </summary>
+        public event EventHandler<GroupPresenceEventArgs> GroupPresenceChanged
+        {
+            add
+            {
+                groupChat.PrescenceChanged += value;
+            }
+            remove
+            {
+                groupChat.PrescenceChanged -= value;
+            }
+        }
+
+        /// <summary>
+        /// The event that is raised when an invite to a group chat is received.
+        /// </summary>
+        public event EventHandler<GroupInviteEventArgs> GroupInviteReceived
+        {
+            add
+            {
+                groupChat.InviteReceived += value;
+            }
+            remove
+            {
+                groupChat.InviteReceived -= value;
+            }
+        }
+
+        /// <summary>
+        /// The event that is raised when an invite to a group chat is declined.
+        /// </summary>
+        public event EventHandler<GroupInviteDeclinedEventArgs> GroupInviteDeclined
+        {
+            add
+            {
+                groupChat.InviteWasDeclined += value;
+            }
+            remove
+            {
+                groupChat.InviteWasDeclined -= value;
+            }
+        }
+
+        /// <summary>
+        /// The event that is raised when the server responds with an error in relation to a group chat.
+        /// </summary>
+        public event EventHandler<GroupErrorEventArgs> GroupMucError
+        {
+            add
+            {
+                groupChat.MucErrorResponse += value;
+            }
+            remove
+            {
+                groupChat.MucErrorResponse -= value;
             }
         }
 
@@ -1660,6 +1757,184 @@ namespace Sharp.Xmpp.Client
         }
 
         /// <summary>
+        /// Returns a list of active public chat room messages.
+        /// </summary>
+        /// <param name="chatService">JID of the chat service (depends on server)</param>
+        /// <returns>List of Room JIDs</returns>
+        public IEnumerable<RoomInfoBasic> DiscoverRooms(Jid chatService)
+        {
+            AssertValid();
+            return groupChat.DiscoverRooms(chatService);
+        }
+
+
+        /// <summary>
+        /// Returns a list of active public chat room messages.
+        /// </summary>
+        /// <param name="chatRoom">Room Identifier</param>
+        /// <returns>Information about room</returns>
+        public RoomInfoExtended GetRoomInfo(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetRoomInfo(chatRoom);
+        }
+
+        /// <summary>
+        /// Joins or creates new room using the specified room.
+        /// </summary>
+        /// <param name="chatRoom">Chat room</param>
+        /// <param name="nickname">Desired nickname</param>
+        /// <param name="password">(Optional) Password</param>
+        public void JoinRoom(Jid chatRoom, string nickname, string password = null)
+        {
+            AssertValid();
+            groupChat.JoinRoom(chatRoom, nickname, password);
+        }
+
+        /// <summary>
+        /// Leaves the specified room.
+        /// </summary>
+        public void LeaveRoom(Jid chatRoom, string nickname)
+        {
+            AssertValid();
+            groupChat.LeaveRoom(chatRoom, nickname);
+        }
+
+        /// <summary>
+        /// Sends a request to get X previous messages.
+        /// </summary>
+        /// <param name="option">How long to look back</param>
+        public void GetGroupChatLog(History option)
+        {
+            AssertValid();
+            groupChat.GetMessageLog(option);
+        }
+
+        /// <summary>
+        /// Requests a list of occupants within the specific room.
+        /// </summary>
+        public IEnumerable<Occupant> GetRoomAllOccupants(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetMembers(chatRoom);
+        }
+
+        /// <summary>
+        /// Requests a list of non-members within the specified room.
+        /// </summary>
+        public IEnumerable<Occupant> GetRoomStrangers(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetMembers(chatRoom, Affiliation.None);
+        }
+
+        /// <summary>
+        /// Requests a list of room members within the specified room.
+        /// </summary>
+        public IEnumerable<Occupant> GetRoomMembers(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetMembers(chatRoom, Affiliation.Member);
+        }
+
+        /// <summary>
+        /// Requests a list of room owners within the specified room.
+        /// </summary>
+        public IEnumerable<Occupant> GetRoomOwners(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetMembers(chatRoom, Affiliation.Owner);
+        }
+
+        /// <summary>
+        /// Requests a list of people banned within the specified room.
+        /// </summary>
+        public IEnumerable<Occupant> GetRoomBanList(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetMembers(chatRoom, Affiliation.Outcast);
+        }
+
+        /// <summary>
+        /// Requests a list of visitors within the specified room.
+        /// </summary>
+        public IEnumerable<Occupant> GetRoomVisitors(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetMembers(chatRoom, Role.Visitor);
+        }
+
+        /// <summary>
+        /// Requests a list of occupants with a voice privileges within the specified room.
+        /// </summary>
+        public IEnumerable<Occupant> GetRoomVoiceList(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetMembers(chatRoom, Role.Participant);
+        }
+
+        /// <summary>
+        /// Requests a list of moderators within the specified room.
+        /// </summary>
+        public IEnumerable<Occupant> GetRoomModerators(Jid chatRoom)
+        {
+            AssertValid();
+            return groupChat.GetMembers(chatRoom, Role.Moderator);
+        }
+        
+        /// <summary>
+        /// Allows moderators to kick an occupant from the room.
+        /// </summary>
+        /// <param name="chatRoom">chat room</param>
+        /// <param name="nickname">user to kick</param>
+        /// <param name="reason">reason for kick</param>
+        public void KickGroupOccupant(Jid chatRoom, string nickname, string reason = null)
+        {
+            groupChat.KickOccupant(chatRoom, nickname, reason);
+        }
+
+        /// <summary>
+        /// Allows a user to modify the configuration of a specified room.
+        /// Only "Room Owners" may edit room config.
+        /// </summary>
+        /// <param name="room">JID of the room.</param>
+        /// <param name="callback">Room Configuration callback.</param>
+        public void ModifyRoomConfig(Jid room, RegistrationCallback callback)
+        {
+            groupChat.ModifyRoomConfig(room, callback);
+        }
+
+        /// <summary>
+        /// Asks the chat service to invite the specified user to the chat room you specify.
+        /// </summary>
+        /// <param name="to">user you intend to invite to chat room.</param>
+        /// <param name="message">message you want to send to the user.</param>
+        /// <param name="chatRoom">Jid of the chat room.</param>
+        /// <param name="password">Password if any.</param>
+        public void SendInvite(Jid to, Jid chatRoom, string message, string password = null)
+        {
+            groupChat.SendInvite(to, chatRoom, message, password);
+        }
+
+        /// <summary>
+        /// Responds to a group chat invitation with a decline message.
+        /// </summary>
+        /// <param name="invite">Original group chat invitation.</param>
+        /// <param name="reason">Reason for declining.</param>
+        public void DeclineInvite(Invite invite, string reason)
+        {
+            groupChat.DeclineInvite(invite, reason);
+        }
+
+        /// <summary>
+        /// Allows visitors to request membership to a room.
+        /// </summary>
+        public void RequestVoice(Jid chatRoom)
+        {
+            groupChat.RequestPrivilige(chatRoom, Role.Participant);
+        }
+
+        /// <summary>
         /// Closes the connection with the XMPP server. This automatically disposes
         /// of the object.
         /// </summary>
@@ -1756,6 +2031,7 @@ namespace Sharp.Xmpp.Client
             bitsOfBinary = im.LoadExtension<BitsOfBinary>();
             vcardAvatars = im.LoadExtension<VCardAvatars>();
             cusiqextension = im.LoadExtension<CustomIqExtension>();
+            groupChat = im.LoadExtension<MultiUserChat>();
         }
     }
 }

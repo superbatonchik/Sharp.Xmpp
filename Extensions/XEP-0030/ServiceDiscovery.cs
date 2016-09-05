@@ -296,9 +296,11 @@ namespace Sharp.Xmpp.Extensions
                     name = e.GetAttribute("name");
                 if (String.IsNullOrEmpty(cat) || String.IsNullOrEmpty(type))
                     continue;
+
                 idents.Add(new Identity(cat, type,
                     String.IsNullOrEmpty(name) ? null : name));
             }
+
             return idents;
         }
 
