@@ -1257,7 +1257,7 @@ namespace Sharp.Xmpp.Im {
 		internal Iq IqRequest(IqType type, Jid to = null, Jid from = null,
 			XmlElement data = null, CultureInfo language = null,
 			int millisecondsTimeout = -1) {
-			Iq iq = new Iq(type, null, to, from, data, language);
+			Iq iq = new Iq(type, Guid.NewGuid().ToString("n"), to, from, data, language);
 			// Invoke IOutput<Iq> Plugins.
 			foreach (var ext in extensions) {
 				var filter = ext as IOutputFilter<Iq>;
@@ -1292,7 +1292,7 @@ namespace Sharp.Xmpp.Im {
 		internal string IqRequestAsync(IqType type, Jid to = null, Jid from = null,
 			XmlElement data = null, CultureInfo language = null,
 			Action<string, Iq> callback = null) {
-			Iq iq = new Iq(type, null, to, from, data, language);
+			Iq iq = new Iq(type, Guid.NewGuid().ToString("n"), to, from, data, language);
 			// Invoke IOutput<Iq> Plugins.
 			foreach (var ext in extensions) {
 				var filter = ext as IOutputFilter<Iq>;
